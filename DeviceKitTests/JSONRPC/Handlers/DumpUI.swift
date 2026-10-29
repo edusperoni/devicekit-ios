@@ -55,7 +55,7 @@ struct DumpUIMethodHandler: RPCMethodHandler {
             let foregroundApp = RunningApp.getForegroundApp()
             guard let foregroundApp = foregroundApp else {
                 logger.warning("No foreground app found, returning springboard app hierarchy")
-                let springboardHierarchy = inInterfaceSpace(
+                let springboardHierarchy = springboardAppInInterfaceSpace(
                     try elementHierarchy(xcuiElement: springboardApplication),
                     OrientationGeometry.springboardToInterface()
                 )
@@ -115,7 +115,7 @@ struct DumpUIMethodHandler: RPCMethodHandler {
         let springboardToInterface = isOnSecondaryDisplay ? nil : OrientationGeometry.springboardToInterface()
 
         if foregroundApp.bundleID == "com.apple.springboard" {
-            appHierarchy = inInterfaceSpace(appHierarchy, springboardToInterface)
+            appHierarchy = springboardAppInInterfaceSpace(appHierarchy, springboardToInterface)
         }
 
         let statusBars = (logger.measure(message: "Fetch status bar hierarchy") {
@@ -150,6 +150,14 @@ struct DumpUIMethodHandler: RPCMethodHandler {
         }
 
         return buildRootElement(app: appHierarchy, statusBars: statusBars, safari: safariWebViewHierarchy)
+    }
+
+    // springboard's application element already reports the rotated screen;
+    // only the elements inside it are on the panel's axes
+    private func springboardAppInInterfaceSpace(_ app: AXElement, _ geometry: OrientationGeometry?) -> AXElement {
+        var mapped = app
+        mapped.children = app.children?.map { inInterfaceSpace($0, geometry) }
+        return mapped
     }
 
     private func inInterfaceSpace(_ springboardElement: AXElement, _ geometry: OrientationGeometry?) -> AXElement {

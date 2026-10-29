@@ -501,6 +501,15 @@ test.describe("device.dump.ui on the home screen in landscape", () => {
       expect({ x: rect.x, y: rect.y, width: rect.width }).toEqual({ x: 0, y: 0, width: screenSize.width });
     }
   });
+
+  // the application element itself already reports the rotated screen
+  test("the home screen fills the screen", async ({ request }) => {
+    const { screenSize } = returnsResult(await rpc(request, "device.info"));
+    const tree = returnsResult(await rpc(request, "device.dump.ui"));
+    const [springboard] = elementsOfType(tree, "XCUIElementTypeApplication");
+    expect(springboard, "no application in the ui tree").toBeDefined();
+    expect(springboard.rect).toEqual({ x: 0, y: 0, ...screenSize });
+  });
 });
 
 // ---------------------------------------------------------------------------
